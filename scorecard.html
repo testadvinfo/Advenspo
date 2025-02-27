@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scorecard Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #3399ff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        a { color: #4fd1c5; }
+        input::placeholder { color: #b0b3b8; }
+        input { opacity: 0.9; color: black; }
+    </style>
+    <script>
+        let isAdmin = false;
+        let events = [
+            { name: 'Pookalam Design', scores: [100, 100, 100, 100] },
+            { name: 'Malayali Manga', scores: [0, 0, 100, 0] }
+        ];
+        let teams = ['Team A', 'Team B', 'Team C', 'Team D'];
+
+        function loginAsAdmin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'admin' && password === 'admin123') {
+                isAdmin = true;
+                renderAdmin();
+            } else {
+                alert('Invalid credentials!');
+            }
+        }
+
+        function loginAsUser() {
+            isAdmin = false;
+            renderUser();
+        }
+
+        function logout() {
+            isAdmin = false;
+            renderLogin();
+        }
+
+        function calculateTotals() {
+            return teams.map((_, teamIndex) =>
+                events.reduce((total, event) => total + (event.scores[teamIndex] || 0), 0)
+            );
+        }
+
+        function renderAdmin() {
+            const totals = calculateTotals();
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class='flex flex-col items-center w-full'>
+                    <div class='flex justify-between items-center mb-4 w-full max-w-4xl relative'>
+                        <h1 class='text-4xl font-bold text-center w-full'>Scorecard Admin Panel</h1>
+                        <button onclick='logout()' class='bg-red-500 text-white p-2 rounded absolute top-4 right-4'>Logout</button>
+                    </div>
+                    <div class='overflow-x-auto w-full max-w-4xl'>
+                        <table class='min-w-full bg-white text-black text-center'>
+                            <thead class='bg-blue-500 text-white'>
+                                <tr>
+                                    <th class='p-2'>Events</th>
+                                    ${teams.map((team, index) => `<th class='p-2'><input type='text' value='${team}' class='border p-2 w-full' onchange='updateTeam(${index}, this.value)'/></th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${events.map((event, i) => `
+                                    <tr>
+                                        <td class='border p-2'>
+                                            <input type='text' value='${event.name}' class='border p-2 w-full' onchange='updateEventName(${i}, this.value)'/>
+                                        </td>
+                                        ${event.scores.map((score, j) => `
+                                            <td class='border p-2'>
+                                                <input type='number' value='${score}' class='border p-2 w-full' onchange='updateScore(${i}, ${j}, this.value)' min="0" step="1" />
+                                            </td>
+                                        `).join('')}
+                                    </tr>
+                                `).join('')}
+                                <tr>
+                                    <td class='border p-2'>
+                                        <button onclick='addEvent()' class='bg-green-500 text-white p-2 rounded'>Add Event</button>
+                                    </td>
+                                    ${teams.map(()=> `<td class='border p-2'></td>`).join('')}
+                                </tr>
+                                <tr class='bg-gray-200 font-bold'>
+                                    <td class='border p-2'>Total Scores</td>
+                                    ${totals.map(total => `<td class='border p-2'>${total}</td>`).join('')}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        function renderUser() {
+            const totals = calculateTotals();
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class='flex flex-col items-center w-full'>
+                    <div class='flex justify-between items-center mb-4 w-full max-w-4xl relative'>
+                        <h1 class='text-4xl font-bold text-center w-full'>Advenser team Scorecard</h1>
+                        <button onclick='logout()' class='bg-red-500 text-white p-2 rounded absolute top-4 right-4'>Logout</button>
+                    </div>
+                    <div class='flex justify-center w-full'>
+                        <div class='overflow-x-auto w-full max-w-4xl'>
+                            <table class='min-w-full bg-white text-black text-center'>
+                                <thead class='bg-blue-500 text-white'>
+                                    <tr><th class='p-2'>Events</th>${teams.map(team => `<th class='p-2'>${team}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${events.map(event => `
+                                    <tr>
+                                        <td class='border p-2'>${event.name}</td>
+                                        ${event.scores.map(score => `<td class='border p-2'>${score}</td>`).join('')}
+                                    </tr>`).join('')}
+                                    <tr class='bg-gray-200 font-bold'>
+                                        <td class='border p-2'>Total</td>
+                                        ${totals.map(total => `<td class='border p-2'>${total}</td>`).join('')}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function updateEventName(index, value) {
+            events[index].name = value;
+            renderAdmin();
+        }
+
+        function updateScore(eventIndex, teamIndex, value) {
+            const parsedValue = parseInt(value, 10);
+            if (!isNaN(parsedValue) && parsedValue >= 0) {
+                events[eventIndex].scores[teamIndex] = parsedValue;
+                renderAdmin();
+            } else {
+                 events[eventIndex].scores[teamIndex] = 0;
+                renderAdmin();
+            }
+        }
+
+        function updateTeam(index, value) {
+            teams[index] = value;
+            renderAdmin();
+        }
+
+        function addEvent() {
+            events.push({ name: 'New Event', scores: [0, 0, 0, 0] });
+            renderAdmin();
+        }
+
+        function renderLogin() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class='flex flex-col items-center justify-center w-full h-full'>
+                    <div class='w-full max-w-md text-center'>
+                        <h1 class='text-4xl font-bold mb-6 whitespace-nowrap'>Advenser Team Points</h1>
+                        <h2 class='text-2xl font-bold mb-6'>Login</h2>
+                        <input id='username' type='text' placeholder='Username' class='border p-2 mb-2 block w-full'>
+                        <input id='password' type='password' placeholder='Password' class='border p-2 mb-2 block w-full'>
+                        <button onclick='loginAsAdmin()' class='bg-blue-700 text-white p-2 rounded w-full mb-2'>Login as Admin</button>
+                        <button onclick='loginAsUser()' class='bg-green-500 text-white p-2 rounded w-full'>Continue as User</button>
+                    </div>
+                </div>`;
+        }
+
+        window.onload = renderLogin;
+    </script>
+</head>
+<body>
+    <div id="app" class="container mx-auto p-4 w-full h-full flex items-center justify-center"></div>
+</body>
+</html>
